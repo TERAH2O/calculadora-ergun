@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>TERA. — Pérdida de Carga · Ergun Multicapa</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#08101D; --s1:#0B1422; --s2:#0E1A2E; --s3:#11203A; --s4:#152644;
+  --w:#FFFFFF; --off:#DCE8F4; --lt:#8AAEC8; --mid:#4E6E88; --dim:#28405C;
+  --blue:#4A7FC0; --b2:#5C90D2; --b3:#2A5290; --blt:#7AAEE8;
+  --ok:#3BA872; --okd:rgba(59,168,114,.12);
+  --warn:#AC8228; --warnd:rgba(172,130,40,.12);
+  --err:#A04848; --errd:rgba(160,72,72,.12);
+  --water:rgba(74,127,192,.55);
+  --font:'Century Gothic','CenturyGothic','AppleGothic','Gill Sans MT',sans-serif;
+  --mono:'Courier New',monospace;
+}
+
+/* Preset media colors */
+.c-ant{--lc:#8B7ED8;} .c-car{--lc:#4A4A6A;} .c-are{--lc:#5C90D2;}
+.c-gra{--lc:#A05858;} .c-grv{--lc:#4A6878;} .c-cus{--lc:#5C9870;}
+
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);
+  font-family:var(--font);color:var(--off);font-size:13px;}
+
+/* ── HEADER ── */
+header{background:var(--s1);border-bottom:2px solid var(--blue);
+       height:58px;padding:0 24px;display:flex;align-items:center;gap:0;
+       position:relative;z-index:50;}
+.logo-w{display:flex;flex-direction:column;justify-content:center;
+        padding-right:18px;border-right:1px solid rgba(74,127,192,.2);
+        margin-right:18px;line-height:1;}
+.logo-sp{font-size:8px;font-weight:400;letter-spacing:.24em;
+         text-transform:uppercase;color:var(--blue);}
+.logo-hr{height:1px;background:var(--blue);opacity:.55;margin:3px 0 4px;}
+.logo-n{font-size:24px;font-weight:700;color:var(--w);letter-spacing:.04em;
+        display:flex;align-items:flex-end;}
+.logo-n .d{width:5px;height:5px;border-radius:50%;background:var(--blue);
+           margin-bottom:3px;margin-left:2px;flex-shrink:0;}
+.hdr-t{flex:1;}
+.hdr-t h1{font-size:14px;font-weight:700;color:var(--w);letter-spacing:.06em;text-transform:uppercase;}
+.hdr-t p{font-size:10px;color:var(--mid);margin-top:2px;}
+.hdr-eq{margin-left:auto;font-family:var(--mono);font-size:9.5px;
+        color:var(--dim);line-height:2;text-align:right;
+        border-left:1px solid rgba(74,127,192,.12);padding-left:18px;}
+.hdr-eq .hl{color:var(--b2);}
+
+/* ── APP SHELL ── */
+.app{display:grid;grid-template-columns:290px 1fr;
+     height:calc(100vh - 58px);overflow:hidden;}
+
+/* ── SIDEBAR ── */
+aside{background:var(--s1);border-right:1px solid rgba(74,127,192,.14);
+      display:flex;flex-direction:column;overflow:hidden;}
+.sb-scroll{flex:1;overflow-y:auto;padding-bottom:12px;}
+.sb-scroll::-webkit-scrollbar{width:4px;}
+.sb-scroll::-webkit-scrollbar-thumb{background:var(--dim);}
+
+/* Section header */
+.sec{padding:12px 16px 10px;border-bottom:1px solid rgba(74,127,192,.1);}
+.sec-lbl{font-size:9px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;
+         color:var(--blue);margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+.sec-lbl::after{content:'';flex:1;height:1px;background:rgba(74,127,192,.15);}
+
+/* Input fields */
+.inp-row{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;}
+.inp-g{display:flex;flex-direction:column;gap:3px;}
+.inp-g.full{grid-column:1/-1;}
+.inp-lbl{font-size:9px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--mid);}
+.inp{background:var(--s3);border:1px solid rgba(74,127,192,.2);color:var(--off);
+     font-family:var(--font);font-size:12px;padding:6px 9px;width:100%;outline:none;
+     transition:border-color .15s;}
+.inp:focus{border-color:var(--blue);}
+.inp-note{font-size:9px;color:var(--dim);margin-top:2px;}
+.calc-v{font-family:var(--mono);font-size:11px;color:var(--b2);
+        padding:5px 9px;background:var(--s3);border:1px solid rgba(74,127,192,.15);}
+
+/* Slider */
+.sl{margin-bottom:9px;}
+.sl-h{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px;}
+.sl-n{font-size:11px;color:var(--mid);}
+.sl-v{font-family:var(--mono);font-size:10px;color:var(--b2);}
+input[type=range]{-webkit-appearance:none;width:100%;height:2px;
+  background:rgba(74,127,192,.2);cursor:pointer;outline:none;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:10px;height:10px;
+  background:var(--blue);cursor:pointer;border-radius:0;transition:transform .12s;}
+input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.4);}
+
+/* Layer manager */
+.layer-list{display:flex;flex-direction:column;gap:0;}
+.layer-item{border-bottom:1px solid rgba(74,127,192,.08);}
+.layer-item:last-child{border-bottom:none;}
+.layer-head{display:flex;align-items:center;gap:8px;padding:9px 14px;
+            cursor:pointer;user-select:none;transition:background .15s;}
+.layer-head:hover{background:rgba(74,127,192,.05);}
+.layer-color{width:4px;align-self:stretch;flex-shrink:0;border-radius:0;}
+.layer-toggle{flex-shrink:0;}
+.layer-toggle input[type=checkbox]{accent-color:var(--blue);width:13px;height:13px;cursor:pointer;}
+.layer-title{flex:1;font-size:12px;font-weight:600;color:var(--off);letter-spacing:.04em;}
+.layer-dh{font-family:var(--mono);font-size:10px;margin-left:auto;padding-right:4px;}
+.layer-chevron{font-size:9px;color:var(--dim);transition:transform .2s;flex-shrink:0;}
+.layer-chevron.open{transform:rotate(90deg);}
+.layer-body{padding:0 14px 12px 22px;display:none;border-top:1px solid rgba(74,127,192,.07);}
+.layer-body.open{display:block;}
+
+/* Add layer button */
+.btn-add{width:100%;background:none;border:1px dashed rgba(74,127,192,.3);
+         color:var(--blue);font-family:var(--font);font-size:11px;
+         padding:9px;cursor:pointer;transition:all .18s;letter-spacing:.06em;}
+.btn-add:hover{background:rgba(74,127,192,.07);border-color:var(--blue);}
+
+/* Media type picker */
+.media-picker{display:grid;grid-template-columns:repeat(3,1fr);gap:3px;margin-bottom:10px;}
+.mp-opt{padding:5px 4px;text-align:center;font-size:9px;font-weight:600;
+        letter-spacing:.06em;text-transform:uppercase;cursor:pointer;
+        border:1px solid rgba(74,127,192,.15);color:var(--mid);transition:all .15s;}
+.mp-opt:hover{border-color:var(--blue);color:var(--lt);}
+.mp-opt.sel{color:var(--w);border-color:transparent;}
+
+/* Order buttons */
+.layer-actions{display:flex;gap:4px;margin-top:8px;}
+.btn-sm{background:none;border:1px solid rgba(74,127,192,.2);color:var(--mid);
+        font-family:var(--font);font-size:9px;padding:3px 8px;cursor:pointer;
+        transition:all .15s;letter-spacing:.06em;}
+.btn-sm:hover{background:rgba(74,127,192,.08);color:var(--lt);}
+.btn-sm.del{border-color:rgba(160,72,72,.3);color:var(--err);}
+.btn-sm.del:hover{background:rgba(160,72,72,.08);}
+
+/* ── MAIN ── */
+main{display:flex;flex-direction:column;overflow:hidden;background:var(--bg);}
+.main-scroll{flex:1;overflow-y:auto;padding:16px 22px;display:flex;flex-direction:column;gap:16px;}
+.main-scroll::-webkit-scrollbar{width:4px;}
+.main-scroll::-webkit-scrollbar-thumb{background:var(--dim);}
+
+/* Alert */
+.alert{padding:9px 16px;font-size:11px;font-weight:700;letter-spacing:.08em;
+       text-transform:uppercase;display:flex;align-items:center;gap:10px;
+       border-left:3px solid transparent;flex-shrink:0;}
+.a-ok{background:var(--okd);border-color:var(--ok);color:var(--ok);}
+.a-warn{background:var(--warnd);border-color:var(--warn);color:var(--warn);}
+.a-err{background:var(--errd);border-color:var(--err);color:var(--err);}
+.a-info{background:rgba(74,127,192,.08);border-color:var(--blue);color:var(--b2);}
+
+/* Result top row */
+.res-row{display:grid;grid-template-columns:repeat(5,1fr);gap:2px;
+         background:rgba(74,127,192,.1);flex-shrink:0;}
+.rc{background:var(--s2);padding:13px 14px;}
+.rc.hi{background:rgba(74,127,192,.18);}
+.rc-lbl{font-size:8px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+        color:var(--dim);margin-bottom:5px;}
+.rc-val{font-family:var(--mono);font-size:22px;line-height:1;color:var(--w);}
+.rc-val.va{color:var(--b2);}
+.rc-unit{font-size:9px;color:var(--dim);margin-top:3px;}
+
+/* Two col panel */
+.two{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.three{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;}
+
+/* Panel box */
+.pbox{background:var(--s2);border:1px solid rgba(74,127,192,.12);padding:16px;}
+.pbox-t{font-size:9px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;
+        color:var(--blue);margin-bottom:12px;}
+
+/* Filter diagram */
+#filter-svg-wrap{display:flex;justify-content:center;align-items:flex-start;}
+
+/* Bar chart */
+.bar-row{display:flex;align-items:center;gap:10px;margin-bottom:9px;}
+.bar-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0;}
+.bar-nm{font-size:10px;font-weight:600;min-width:82px;letter-spacing:.04em;text-transform:uppercase;}
+.bar-track{flex:1;height:5px;background:rgba(74,127,192,.1);}
+.bar-fill{height:100%;transition:width .45s ease;}
+.bar-info{font-family:var(--mono);font-size:9px;color:var(--dim);min-width:120px;text-align:right;}
+
+/* Conversions */
+.conv{display:grid;grid-template-columns:1fr 1fr;gap:2px;background:rgba(74,127,192,.08);}
+.cv{background:var(--s2);padding:9px 12px;display:flex;justify-content:space-between;align-items:center;}
+.cv-u{font-size:11px;font-weight:600;color:var(--off);}
+.cv-v{font-family:var(--mono);font-size:12px;color:var(--b2);}
+
+/* Table */
+table{width:100%;border-collapse:collapse;font-size:11px;}
+th{font-size:8px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+   color:var(--dim);padding:6px 9px;text-align:left;
+   border-bottom:1px solid rgba(74,127,192,.15);}
+td{padding:7px 9px;border-bottom:1px solid rgba(74,127,192,.07);color:var(--lt);}
+td:first-child{color:var(--off);}
+tr:last-child td{border-bottom:none;}
+td.hl{color:var(--b2);font-family:var(--mono);}
+td.ok{color:var(--ok);}td.wa{color:var(--warn);}td.er{color:var(--err);}
+
+/* Formula */
+.fx{background:var(--s1);border-left:3px solid var(--blue);
+    padding:11px 14px;font-family:var(--mono);font-size:11px;
+    color:var(--b2);line-height:2.1;}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo-w">
+    <span class="logo-sp">Servicios Profesionales</span>
+    <div class="logo-hr"></div>
+    <div class="logo-n">TERA<span class="d"></span></div>
+  </div>
+  <div class="hdr-t">
+    <h1>Pérdida de Carga — Ergun Multicapa</h1>
+    <p>filtros abiertos descendentes · capas configurables · Sistema Internacional</p>
+  </div>
+  <div class="hdr-eq">
+    <span class="hl">ΔP/L</span> = 150·μ·v·(1−ε)²/(d²·ε³) + 1.75·ρ·v²·(1−ε)/(d·ε³)<br>
+    <span class="hl">Δh</span> = ΔP·L / (ρ·g) &nbsp;[m H₂O] &nbsp;·&nbsp; v[m/s] · d[m] · μ[Pa·s]
+  </div>
+</header>
+
+<div class="app">
+
+<!-- SIDEBAR -->
+<aside>
+<div class="sb-scroll">
+
+  <!-- Hidráulica del filtro -->
+  <div class="sec">
+    <div class="sec-lbl">Hidráulica del filtro</div>
+    <div class="inp-row">
+      <div class="inp-g">
+        <span class="inp-lbl">Caudal Q (m³/h)</span>
+        <input class="inp" type="number" id="Q" value="100" min="0.1" step="1" oninput="calc()">
+      </div>
+      <div class="inp-g">
+        <span class="inp-lbl">N° Unidades</span>
+        <input class="inp" type="number" id="Nu" value="2" min="1" max="20" step="1" oninput="calc()">
+      </div>
+    </div>
+    <div class="inp-row">
+      <div class="inp-g">
+        <span class="inp-lbl">Ancho (m)</span>
+        <input class="inp" type="number" id="Fw" value="4.0" min="0.1" step="0.1" oninput="calc()">
+      </div>
+      <div class="inp-g">
+        <span class="inp-lbl">Largo (m)</span>
+        <input class="inp" type="number" id="Fl" value="3.5" min="0.1" step="0.1" oninput="calc()">
+      </div>
+    </div>
+    <div class="inp-row">
+      <div class="inp-g">
+        <span class="inp-lbl">Sobrenadante h (m)</span>
+        <input class="inp" type="number" id="Sob" value="0.30" min="0.05" max="1.5" step="0.05" oninput="calc()">
+      </div>
+      <div class="inp-g">
+        <span class="inp-lbl">Temperatura T (°C)</span>
+        <input class="inp" type="number" id="Temp" value="15" min="5" max="40" step="1" oninput="calc()">
+      </div>
+    </div>
+    <div class="inp-row">
+      <div class="inp-g">
+        <span class="inp-lbl">Área/unidad (m²)</span>
+        <div class="calc-v" id="cv-A">—</div>
+      </div>
+      <div class="inp-g">
+        <span class="inp-lbl">v superficial</span>
+        <div class="calc-v" id="cv-v">—</div>
+      </div>
+    </div>
+    <div class="inp-row">
+      <div class="inp-g">
+        <span class="inp-lbl">μ dinámica (Pa·s)</span>
+        <div class="calc-v" id="cv-mu">—</div>
+      </div>
+      <div class="inp-g">
+        <span class="inp-lbl">ρ agua (kg/m³)</span>
+        <div class="calc-v" id="cv-rho">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Capas del lecho -->
+  <div class="sec">
+    <div class="sec-lbl">Lechos filtrantes</div>
+    <div class="layer-list" id="layer-list"></div>
+    <div style="padding:10px 14px;">
+      <button class="btn-add" onclick="addLayer()">+ Agregar capa</button>
+    </div>
+  </div>
+
+</div><!-- sb-scroll -->
+</aside>
+
+<!-- MAIN -->
+<main>
+<div class="main-scroll">
+
+  <!-- Alerta -->
+  <div class="alert a-info" id="alert-bar">Configura las capas del filtro para calcular.</div>
+
+  <!-- Resultados top -->
+  <div class="res-row">
+    <div class="rc hi">
+      <div class="rc-lbl">Δh total lecho</div>
+      <div class="rc-val va" id="r-dhtot">—</div>
+      <div class="rc-unit">m columna de agua</div>
+    </div>
+    <div class="rc">
+      <div class="rc-lbl">ΔP total</div>
+      <div class="rc-val" id="r-pa">—</div>
+      <div class="rc-unit">Pa</div>
+    </div>
+    <div class="rc">
+      <div class="rc-lbl">ΔP total</div>
+      <div class="rc-val" id="r-kpa">—</div>
+      <div class="rc-unit">kPa</div>
+    </div>
+    <div class="rc">
+      <div class="rc-lbl">v superficial</div>
+      <div class="rc-val" id="r-v">—</div>
+      <div class="rc-unit">m/h</div>
+    </div>
+    <div class="rc">
+      <div class="rc-lbl">Capas activas</div>
+      <div class="rc-val" id="r-nc">—</div>
+      <div class="rc-unit">en el lecho</div>
+    </div>
+  </div>
+
+  <!-- Diagrama + barras -->
+  <div class="two">
+
+    <!-- Diagrama del filtro -->
+    <div class="pbox">
+      <div class="pbox-t">Sección transversal — perfil de pérdida de carga</div>
+      <div id="filter-svg-wrap">
+        <svg id="filter-svg" viewBox="0 0 340 420" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-height:380px;"></svg>
+      </div>
+    </div>
+
+    <!-- Barras + conversiones -->
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div class="pbox" style="flex:1;">
+        <div class="pbox-t">Contribución al Δh total</div>
+        <div id="bars-wrap"></div>
+        <!-- Mini gráfica -->
+        <div style="margin-top:12px;padding-top:10px;border-top:1px solid rgba(74,127,192,.1);">
+          <div class="pbox-t" style="margin-bottom:8px;">Δh vs velocidad superficial</div>
+          <svg id="curve-svg" viewBox="0 0 280 110" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-height:105px;"></svg>
+        </div>
+      </div>
+      <div class="pbox">
+        <div class="pbox-t">Conversión del resultado</div>
+        <div class="conv" id="conv-grid"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabla detallada -->
+  <div class="pbox">
+    <div class="pbox-t">Detalle por capa — ecuación de Ergun completa</div>
+    <table><thead><tr>
+      <th>Capa</th><th>d (mm)</th><th>ε</th><th>L (m)</th>
+      <th>v superficial</th><th>v poros</th><th>Re</th>
+      <th>T₁ viscoso (m)</th><th>T₂ inercial (m)</th>
+      <th>ΔP/L (Pa/m)</th><th>Δh capa (m)</th><th>% total</th>
+    </tr></thead>
+    <tbody id="detail-tbody"></tbody></table>
+  </div>
+
+  <!-- Referencia -->
+  <div class="pbox">
+    <div class="pbox-t">Referencia — Ecuación de Ergun (1952)</div>
+    <div class="fx">
+      <span style="color:var(--off)">ΔP/L</span> =
+      <span style="color:#9A8EDE"> 150·μ·v·(1−ε)²/(d²·ε³)</span> +
+      <span style="color:var(--b2)"> 1.75·ρ·v²·(1−ε)/(d·ε³)</span><br>
+      <span style="color:var(--lt);font-size:10px">
+        μ(T) = 0.001002·e<sup>−0.02085·(T−20)</sup> Pa·s &nbsp;·&nbsp;
+        ρ(T) = 1000 − 0.003·(T−4)² kg/m³ &nbsp;·&nbsp;
+        Re = ρ·v·d / (μ·(1−ε))
+      </span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:2px;margin-top:8px;background:rgba(74,127,192,.06);">
+      <div style="background:var(--s2);padding:10px 12px;">
+        <div style="font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#9A8EDE;margin-bottom:6px;">T₁ viscoso (Blake-Kozeny)</div>
+        <div style="font-size:11px;color:var(--mid);line-height:1.65;">Re &lt; 10 · Proporcional a v¹ · domina en filtros de baja velocidad</div>
+        <div id="ref-t1" style="font-family:var(--mono);font-size:11px;color:#9A8EDE;margin-top:6px;">—</div>
+      </div>
+      <div style="background:var(--s2);padding:10px 12px;">
+        <div style="font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--b2);margin-bottom:6px;">T₂ inercial (Burke-Plummer)</div>
+        <div style="font-size:11px;color:var(--mid);line-height:1.65;">Re &gt; 1000 · Proporcional a v² · domina a alta velocidad</div>
+        <div id="ref-t2" style="font-family:var(--mono);font-size:11px;color:var(--b2);margin-top:6px;">—</div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- main-scroll -->
+</main>
+</div><!-- app -->
+
+<script>
+// ── MEDIA PRESETS ──
+const PRESETS = {
+  ant: { name:'Antracita',      color:'#8B7ED8', d:1.20, eps:0.52, dMin:0.6, dMax:2.5 },
+  car: { name:'Carbón Activ.',  color:'#5A5A82', d:0.90, eps:0.50, dMin:0.4, dMax:2.0 },
+  are: { name:'Arena',          color:'#5C90D2', d:0.50, eps:0.40, dMin:0.2, dMax:1.5 },
+  gra: { name:'Granate',        color:'#A05858', d:0.30, eps:0.36, dMin:0.1, dMax:0.8 },
+  grv: { name:'Grava soporte',  color:'#4A6878', d:15,   eps:0.45, dMin:3,   dMax:50  },
+  cus: { name:'Personalizado',  color:'#5C9870', d:0.50, eps:0.40, dMin:0.05,dMax:50  },
+};
+
+let layers = [
+  { id:uid(), key:'ant', d:1.20, eps:0.52, L:0.30, open:false },
+  { id:uid(), key:'are', d:0.50, eps:0.40, L:0.50, open:false },
+  { id:uid(), key:'grv', d:15,   eps:0.45, L:0.20, open:false },
+];
+
+function uid(){ return '_'+Math.random().toString(36).slice(2,8); }
+
+// ── PHYSICS ──
+const muFn  = T => 0.001002 * Math.exp(-0.02085*(T-20));
+const rhoFn = T => 1000 - 0.003*Math.pow(T-4,2);
+
+function ergun(v_ms, d_m, eps, L, mu, rho){
+  if(L<=0||d_m<=0||eps<=0) return {t1g:0,t2g:0,grad:0,dh:0,t1dh:0,t2dh:0};
+  const e3=eps**3, oe=1-eps;
+  const t1g=150*mu*v_ms*oe**2/(d_m**2*e3);
+  const t2g=1.75*rho*v_ms**2*oe/(d_m*e3);
+  const grad=t1g+t2g;
+  const dh=grad*L/(rho*9.81);
+  return {t1g,t2g,grad,dh,t1dh:t1g*L/(rho*9.81),t2dh:t2g*L/(rho*9.81)};
+}
+
+// ── RENDER SIDEBAR LAYERS ──
+function renderLayers(){
+  const list = document.getElementById('layer-list');
+  list.innerHTML = layers.map((ly,i) => {
+    const p = PRESETS[ly.key];
+    const isGrv = ly.key==='grv';
+    return `
+    <div class="layer-item" id="li-${ly.id}">
+      <div class="layer-head" onclick="toggleLayer('${ly.id}')">
+        <div class="layer-color" style="background:${p.color};width:4px;min-width:4px;"></div>
+        <div style="width:8px;"></div>
+        <div class="layer-title">${p.name}</div>
+        <div class="layer-dh" id="ldh-${ly.id}" style="color:${p.color}">—</div>
+        <div class="layer-chevron${ly.open?' open':''}" id="chev-${ly.id}">▶</div>
+      </div>
+      <div class="layer-body${ly.open?' open':''}" id="lb-${ly.id}">
+        <div style="height:8px;"></div>
+        <!-- Media type selector -->
+        <div style="font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-bottom:5px;">Tipo de medio</div>
+        <div class="media-picker">
+          ${Object.entries(PRESETS).map(([k,pp])=>`
+            <div class="mp-opt${ly.key===k?' sel':''}"
+              style="${ly.key===k?'background:'+pp.color+'33;color:'+pp.color+';border-color:'+pp.color+';':''}"
+              onclick="changeKey('${ly.id}','${k}')">
+              ${pp.name.split(' ')[0]}
+            </div>`).join('')}
+        </div>
+        ${ly.key==='cus'?`
+          <div style="margin-bottom:6px;">
+            <div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-bottom:3px;">Nombre del medio</div>
+            <input class="inp" type="text" id="cusname-${ly.id}" value="${ly.cusname||'Medio personalizado'}"
+              oninput="layers.find(l=>l.id==='${ly.id}').cusname=this.value;calc()">
+          </div>`:``}
+        <!-- d slider -->
+        <div class="sl">
+          <div class="sl-h">
+            <span class="sl-n"><em style="font-family:var(--sym)">d</em> ${isGrv?'diámetro':'d₁₀ tam. efectivo'}</span>
+            <span class="sl-v" id="sv-d-${ly.id}">${ly.d.toFixed(2)} mm</span>
+          </div>
+          <input type="range" id="r-d-${ly.id}"
+            min="${p.dMin}" max="${p.dMax}" step="${p.dMin<1?0.05:1}"
+            value="${ly.d}"
+            oninput="upd('${ly.id}','d',parseFloat(this.value));document.getElementById('sv-d-${ly.id}').textContent=parseFloat(this.value).toFixed(2)+' mm';calc()">
+        </div>
+        <!-- eps slider -->
+        <div class="sl">
+          <div class="sl-h">
+            <span class="sl-n"><em style="font-family:var(--sym)">ε</em> porosidad</span>
+            <span class="sl-v" id="sv-e-${ly.id}">${ly.eps.toFixed(2)}</span>
+          </div>
+          <input type="range" id="r-e-${ly.id}" min="0.25" max="0.65" step="0.01" value="${ly.eps}"
+            oninput="upd('${ly.id}','eps',parseFloat(this.value));document.getElementById('sv-e-${ly.id}').textContent=parseFloat(this.value).toFixed(2);calc()">
+        </div>
+        <!-- L slider -->
+        <div class="sl">
+          <div class="sl-h">
+            <span class="sl-n"><em style="font-family:var(--sym)">L</em> espesor del lecho</span>
+            <span class="sl-v" id="sv-l-${ly.id}">${ly.L.toFixed(2)} m</span>
+          </div>
+          <input type="range" id="r-l-${ly.id}" min="0.05" max="1.20" step="0.01" value="${ly.L}"
+            oninput="upd('${ly.id}','L',parseFloat(this.value));document.getElementById('sv-l-${ly.id}').textContent=parseFloat(this.value).toFixed(2)+' m';calc()">
+        </div>
+        <!-- Actions -->
+        <div class="layer-actions">
+          ${i>0?`<button class="btn-sm" onclick="moveLayer('${ly.id}',-1)">↑ Subir</button>`:''}
+          ${i<layers.length-1?`<button class="btn-sm" onclick="moveLayer('${ly.id}',1)">↓ Bajar</button>`:''}
+          ${layers.length>1?`<button class="btn-sm del" onclick="removeLayer('${ly.id}')">✕ Quitar</button>`:''}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleLayer(id){
+  const l=layers.find(l=>l.id===id);
+  l.open=!l.open;
+  renderLayers(); calc();
+}
+function upd(id,key,val){
+  const l=layers.find(l=>l.id===id);
+  l[key]=val;
+}
+function changeKey(id,key){
+  const l=layers.find(l=>l.id===id);
+  const p=PRESETS[key];
+  l.key=key; l.d=p.d; l.eps=p.eps; l.open=true;
+  renderLayers(); calc();
+}
+function addLayer(){
+  layers.push({id:uid(),key:'are',d:0.50,eps:0.40,L:0.30,open:true});
+  renderLayers(); calc();
+}
+function removeLayer(id){
+  layers=layers.filter(l=>l.id!==id);
+  renderLayers(); calc();
+}
+function moveLayer(id,dir){
+  const i=layers.findIndex(l=>l.id===id);
+  const ni=i+dir;
+  if(ni<0||ni>=layers.length) return;
+  [layers[i],layers[ni]]=[layers[ni],layers[i]];
+  renderLayers(); calc();
+}
+
+// ── MAIN CALC ──
+function calc(){
+  const Q   = Math.max(0.01,parseFloat(document.getElementById('Q').value)||0);
+  const Nu  = Math.max(1,parseInt(document.getElementById('Nu').value)||1);
+  const Fw  = Math.max(0.1,parseFloat(document.getElementById('Fw').value)||0.1);
+  const Fl  = Math.max(0.1,parseFloat(document.getElementById('Fl').value)||0.1);
+  const Sob = Math.max(0.05,parseFloat(document.getElementById('Sob').value)||0.3);
+  const T   = parseFloat(document.getElementById('Temp').value)||15;
+
+  const A    = Fw*Fl;
+  const Qpu  = Q/Nu;
+  const v_mh = Qpu/A;
+  const v_ms = v_mh/3600;
+  const mu   = muFn(T);
+  const rho  = rhoFn(T);
+
+  // Update computed fields
+  document.getElementById('cv-A').textContent   = A.toFixed(2)+' m²';
+  document.getElementById('cv-v').textContent   = v_mh.toFixed(2)+' m/h';
+  document.getElementById('cv-mu').textContent  = (mu*1000).toFixed(4)+' mPa·s';
+  document.getElementById('cv-rho').textContent = rho.toFixed(2)+' kg/m³';
+
+  // Ergun per layer
+  const results = layers.map(ly => {
+    const r = ergun(v_ms, ly.d/1000, ly.eps, ly.L, mu, rho);
+    return {...ly, ...r, p:PRESETS[ly.key]};
+  });
+
+  const totDh = results.reduce((s,r)=>s+r.dh,0);
+  const totPa = totDh*rho*9.81;
+  const Ltot  = results.reduce((s,r)=>s+r.L,0);
+  const nc    = results.length;
+
+  // Sidebar Δh per layer
+  results.forEach(r=>{
+    const el=document.getElementById('ldh-'+r.id);
+    if(el) el.textContent = r.dh.toFixed(3)+' m';
+  });
+
+  // Alert
+  const ab=document.getElementById('alert-bar');
+  if(v_mh>15){
+    ab.className='alert a-err';
+    ab.textContent=`✕  Velocidad ${v_mh.toFixed(2)} m/h supera 15 m/h — revisar dimensiones del filtro`;
+  } else if(totDh>1.0){
+    ab.className='alert a-err';
+    ab.textContent=`✕  Δh total ${totDh.toFixed(3)} m H₂O — límite alcanzado · iniciar contralavado`;
+  } else if(totDh>0.5){
+    ab.className='alert a-warn';
+    ab.textContent=`⚠  Δh total ${totDh.toFixed(3)} m H₂O — lecho cargando · monitorear y planificar lavado`;
+  } else if(totDh>0){
+    ab.className='alert a-ok';
+    ab.textContent=`✦  Δh total ${totDh.toFixed(3)} m H₂O — operación normal · v = ${v_mh.toFixed(2)} m/h · T = ${T} °C`;
+  } else {
+    ab.className='alert a-info';
+    ab.textContent='Configure las capas del filtro para calcular.';
+  }
+
+  // Top results
+  document.getElementById('r-dhtot').textContent = totDh.toFixed(3);
+  document.getElementById('r-pa').textContent    = Math.round(totPa).toLocaleString('es');
+  document.getElementById('r-kpa').textContent   = (totPa/1000).toFixed(3);
+  document.getElementById('r-v').textContent     = v_mh.toFixed(2);
+  document.getElementById('r-nc').textContent    = nc;
+
+  // Draw filter diagram
+  drawFilter(results, Sob, totDh, v_mh);
+
+  // Bars
+  const bw=document.getElementById('bars-wrap');
+  bw.innerHTML = results.map(r=>{
+    const pct=totDh>0?(r.dh/totDh*100):0;
+    const w=Math.min(100,pct);
+    return `<div class="bar-row">
+      <div class="bar-dot" style="background:${r.p.color}"></div>
+      <div class="bar-nm" style="color:${r.p.color}">${r.p.name.split(' ')[0]}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${w.toFixed(1)}%;background:${r.p.color}"></div></div>
+      <div class="bar-info">${r.dh.toFixed(4)} m · ${pct.toFixed(1)}%</div>
+    </div>`;
+  }).join('');
+
+  // Conversions
+  document.getElementById('conv-grid').innerHTML=[
+    ['m H₂O',totDh.toFixed(4)],
+    ['Pa',Math.round(totPa).toLocaleString('es')],
+    ['kPa',(totPa/1000).toFixed(4)],
+    ['mbar',(totPa/100).toFixed(2)],
+    ['bar',(totPa/1e5).toFixed(6)],
+    ['psi',(totPa/6895).toFixed(4)],
+  ].map(([u,v])=>`<div class="cv"><span class="cv-u">${u}</span><span class="cv-v">${v}</span></div>`).join('');
+
+  // Detail table
+  const tbody=document.getElementById('detail-tbody');
+  const rows=results.map(r=>{
+    const Re=(rho*v_ms*(r.d/1000)/(mu*(1-r.eps))).toFixed(1);
+    const vp=(v_ms/r.eps*3600).toFixed(2)+' m/h';
+    const pct=totDh>0?(r.dh/totDh*100).toFixed(1):0;
+    const nm=r.key==='cus'?(r.cusname||'Personalizado'):r.p.name;
+    return `<tr>
+      <td style="color:${r.p.color};font-weight:600">${nm}</td>
+      <td class="hl">${r.d.toFixed(2)}</td>
+      <td class="hl">${r.eps.toFixed(2)}</td>
+      <td class="hl">${r.L.toFixed(2)}</td>
+      <td>${v_mh.toFixed(2)} m/h</td>
+      <td>${vp}</td>
+      <td>${Re}</td>
+      <td style="color:#9A8EDE">${r.t1dh.toFixed(4)}</td>
+      <td style="color:var(--b2)">${r.t2dh.toFixed(4)}</td>
+      <td>${Math.round(r.grad)}</td>
+      <td style="color:${r.p.color};font-weight:600">${r.dh.toFixed(4)}</td>
+      <td>${pct}%</td>
+    </tr>`;
+  });
+  rows.push(`<tr style="border-top:1px solid rgba(74,127,192,.2)">
+    <td style="font-weight:700;color:var(--w)">TOTAL</td>
+    <td colspan="9"></td>
+    <td style="color:var(--b2);font-weight:700">${totDh.toFixed(4)}</td>
+    <td style="color:var(--b2)">100%</td>
+  </tr>`);
+  tbody.innerHTML=rows.join('');
+
+  // Ref terms
+  const t1a=results.reduce((s,r)=>s+r.t1g,0);
+  const t2a=results.reduce((s,r)=>s+r.t2g,0);
+  const tt=t1a+t2a;
+  document.getElementById('ref-t1').textContent=`T₁ total = ${Math.round(t1a).toLocaleString('es')} Pa/m (${tt>0?(t1a/tt*100).toFixed(1):0}%)`;
+  document.getElementById('ref-t2').textContent=`T₂ total = ${Math.round(t2a).toLocaleString('es')} Pa/m (${tt>0?(t2a/tt*100).toFixed(1):0}%)`;
+
+  // Curve
+  drawCurve(results, v_mh, mu, rho);
+}
+
+// ── FILTER DIAGRAM ──
+function drawFilter(results, sob, totDh, v_mh){
+  const svg=document.getElementById('filter-svg');
+  const VB_W=340, VB_H=420;
+  const FX=70, FW=180; // filtro X y ancho
+  const ZONE_H=280;    // altura total de capas en px
+  const TOP_Y=70;      // Y donde empieza el sobrenadante
+  const Ltot=results.reduce((s,r)=>s+r.L,0);
+
+  // Alturas proporcionales
+  const DRAIN_H=22;
+  const layersH=ZONE_H-DRAIN_H;
+  const scale=Ltot>0?layersH/Ltot:1;
+  const layerRects=[];
+  let yy=TOP_Y+Math.round(sob/(sob+Ltot+0.05)*90)+20; // sobrenadante height
+  const SOB_H=Math.max(20,Math.round(sob/(sob+Ltot)*90)+10);
+  const BASE_Y=TOP_Y+SOB_H+layersH;
+
+  let curY=TOP_Y+SOB_H;
+  results.forEach(r=>{
+    const h=Math.max(12,Math.round(r.L*scale));
+    layerRects.push({...r, y:curY, h});
+    curY+=h;
+  });
+
+  // Build SVG
+  let s='';
+
+  // Cuerpo del filtro (contorno)
+  s+=`<rect x="${FX}" y="${TOP_Y}" width="${FW}" height="${layersH+SOB_H+DRAIN_H}"
+    fill="none" stroke="rgba(74,127,192,.3)" stroke-width="1.5" rx="1"/>`;
+
+  // Sobrenadante (agua)
+  s+=`<rect x="${FX+1}" y="${TOP_Y}" width="${FW-2}" height="${SOB_H}"
+    fill="rgba(74,127,192,.22)"/>`;
+  // Nivel del agua (línea y ondas)
+  s+=`<line x1="${FX}" y1="${TOP_Y}" x2="${FX+FW}" y2="${TOP_Y}"
+    stroke="var(--blue)" stroke-width="1.5"/>`;
+  // Onditas del agua
+  for(let ox=FX+8;ox<FX+FW-10;ox+=22){
+    s+=`<path d="M${ox} ${TOP_Y+6} Q${ox+5} ${TOP_Y+2} ${ox+11} ${TOP_Y+6}"
+      fill="none" stroke="rgba(74,127,192,.5)" stroke-width="1"/>`;
+  }
+
+  // Flechas de flujo descendente
+  s+=`<line x1="${FX+FW/2}" y1="${TOP_Y+6}" x2="${FX+FW/2}" y2="${TOP_Y+SOB_H-6}"
+    stroke="rgba(74,127,192,.35)" stroke-width="1.2" stroke-dasharray="4 3"
+    marker-end="url(#farr)"/>`;
+
+  // Capas
+  layerRects.forEach(r=>{
+    s+=`<rect x="${FX+1}" y="${r.y}" width="${FW-2}" height="${r.h}"
+      fill="${r.p.color}22"/>`;
+    // Línea inferior de capa
+    s+=`<line x1="${FX}" y1="${r.y+r.h}" x2="${FX+FW}" y2="${r.y+r.h}"
+      stroke="rgba(74,127,192,.12)" stroke-width="1"/>`;
+    // Etiqueta nombre
+    const nm=r.key==='cus'?(r.cusname||'Personalizado'):r.p.name;
+    s+=`<text x="${FX+FW/2}" y="${r.y+r.h/2-5}" text-anchor="middle"
+      font-family="'Century Gothic',sans-serif" font-size="10" font-weight="700"
+      fill="${r.p.color}" letter-spacing="2">${nm.toUpperCase()}</text>`;
+    s+=`<text x="${FX+FW/2}" y="${r.y+r.h/2+9}" text-anchor="middle"
+      font-family="'Courier New'" font-size="8.5" fill="rgba(74,127,192,.6)">
+      d=${r.d.toFixed(2)}mm · ε=${r.eps.toFixed(2)} · L=${r.L.toFixed(2)}m</text>`;
+    // Δh label right
+    s+=`<text x="${FX+FW+6}" y="${r.y+r.h/2+4}" text-anchor="start"
+      font-family="'Courier New'" font-size="10" fill="${r.p.color}">${r.dh.toFixed(3)}m</text>`;
+    // Línea horizontal al label
+    s+=`<line x1="${FX+FW}" y1="${r.y+r.h/2}" x2="${FX+FW+5}" y2="${r.y+r.h/2}"
+      stroke="${r.p.color}" stroke-width=".8" opacity=".5"/>`;
+  });
+
+  // Drenaje
+  s+=`<rect x="${FX+1}" y="${BASE_Y}" width="${FW-2}" height="${DRAIN_H-1}"
+    fill="rgba(59,168,114,.08)"/>`;
+  s+=`<text x="${FX+FW/2}" y="${BASE_Y+DRAIN_H/2+4}" text-anchor="middle"
+    font-family="'Century Gothic',sans-serif" font-size="8.5" fill="rgba(59,168,114,.5)"
+    letter-spacing="1">DRENAJE · SALIDA</text>`;
+
+  // ETIQUETAS IZQUIERDA
+  // Sobrenadante bracket
+  s+=`<line x1="${FX-6}" y1="${TOP_Y}" x2="${FX-6}" y2="${TOP_Y+SOB_H}"
+    stroke="var(--b2)" stroke-width="1.2"/>`;
+  s+=`<line x1="${FX-10}" y1="${TOP_Y}" x2="${FX-3}" y2="${TOP_Y}" stroke="var(--b2)" stroke-width="1.2"/>`;
+  s+=`<line x1="${FX-10}" y1="${TOP_Y+SOB_H}" x2="${FX-3}" y2="${TOP_Y+SOB_H}" stroke="var(--b2)" stroke-width="1.2"/>`;
+  s+=`<text x="${FX-14}" y="${TOP_Y+SOB_H/2+4}" text-anchor="middle"
+    font-family="'Courier New'" font-size="9" fill="var(--b2)"
+    transform="rotate(-90,${FX-14},${TOP_Y+SOB_H/2})">${sob.toFixed(2)}m</text>`;
+  s+=`<text x="${FX-28}" y="${TOP_Y+SOB_H/2-4}" text-anchor="middle"
+    font-family="'Century Gothic',sans-serif" font-size="7.5" fill="rgba(74,127,192,.5)"
+    transform="rotate(-90,${FX-28},${TOP_Y+SOB_H/2})" letter-spacing="1">SOBRENADANTE</text>`;
+
+  // Nivel agua label top
+  s+=`<text x="${FX-5}" y="${TOP_Y-5}" text-anchor="end"
+    font-family="'Century Gothic',sans-serif" font-size="8.5" fill="var(--blue)">▶ Nivel</text>`;
+
+  // Δh total bracket right
+  const bx=FX+FW+55;
+  s+=`<line x1="${bx}" y1="${TOP_Y+SOB_H}" x2="${bx}" y2="${TOP_Y+SOB_H+layersH}"
+    stroke="var(--warn)" stroke-width="1.2"/>`;
+  s+=`<line x1="${bx-4}" y1="${TOP_Y+SOB_H}" x2="${bx+4}" y2="${TOP_Y+SOB_H}" stroke="var(--warn)" stroke-width="1.2"/>`;
+  s+=`<line x1="${bx-4}" y1="${TOP_Y+SOB_H+layersH}" x2="${bx+4}" y2="${TOP_Y+SOB_H+layersH}" stroke="var(--warn)" stroke-width="1.2"/>`;
+  s+=`<text x="${bx+6}" y="${TOP_Y+SOB_H+layersH/2+4}" text-anchor="start"
+    font-family="'Courier New'" font-size="10" font-weight="700" fill="var(--warn)"
+    transform="rotate(0)">${totDh.toFixed(3)}m H₂O</text>`;
+  s+=`<text x="${bx+6}" y="${TOP_Y+SOB_H+layersH/2+17}" text-anchor="start"
+    font-family="'Century Gothic',sans-serif" font-size="7.5" fill="rgba(172,130,40,.6)"
+    letter-spacing="1">Δh TOTAL</text>`;
+
+  // Velocity label top center
+  s+=`<text x="${FX+FW/2}" y="${TOP_Y-16}" text-anchor="middle"
+    font-family="'Century Gothic',sans-serif" font-size="9" fill="rgba(74,127,192,.5)"
+    letter-spacing="1">v = ${v_mh.toFixed(2)} m/h ↓</text>`;
+
+  // Defs
+  s=`<defs>
+    <marker id="farr" viewBox="0 0 8 8" refX="6" refY="4" markerWidth="4" markerHeight="4" orient="auto">
+      <path d="M1 1L7 4L1 7" fill="none" stroke="rgba(74,127,192,.4)" stroke-width="1.2"/>
+    </marker>
+  </defs>`+s;
+
+  svg.innerHTML=s;
+}
+
+// ── CURVE Δh vs v ──
+function drawCurve(results, curV, mu, rho){
+  const svg=document.getElementById('curve-svg');
+  const W=280,H=110,pl=32,pr=14,pt=8,pb=26;
+  const cW=W-pl-pr, cH=H-pt-pb;
+  const vArr=[], dhArr=[];
+  for(let vi=0.5;vi<=20;vi+=0.5){
+    const vm=vi/3600;
+    const d=results.reduce((s,r)=>s+ergun(vm,r.d/1000,r.eps,r.L,mu,rho).dh,0);
+    vArr.push(vi); dhArr.push(d);
+  }
+  const maxDh=Math.max(...dhArr,0.01);
+  const x=vi=>pl+((vi-0.5)/19.5)*cW;
+  const y=d=>pt+cH-(Math.min(d,maxDh*1.05)/maxDh)*cH;
+  let path='';
+  vArr.forEach((vi,i)=>{path+=(i===0?'M':'L')+x(vi).toFixed(1)+','+y(dhArr[i]).toFixed(1);});
+  const cx=x(curV).toFixed(1);
+  const cy=y(results.reduce((s,r)=>s+ergun(curV/3600,r.d/1000,r.eps,r.L,mu,rho).dh,0)).toFixed(1);
+  const ly1=y(1.0), ly05=y(0.5);
+  let s='';
+  // Grid
+  s+=`<line x1="${pl}" y1="${pt}" x2="${pl}" y2="${pt+cH}" stroke="rgba(74,127,192,.18)" stroke-width="1"/>`;
+  s+=`<line x1="${pl}" y1="${pt+cH}" x2="${pl+cW}" y2="${pt+cH}" stroke="rgba(74,127,192,.18)" stroke-width="1"/>`;
+  [0,.25,.5,.75,1].forEach(f=>{
+    const yg=(pt+cH-f*cH).toFixed(0);
+    s+=`<line x1="${pl}" y1="${yg}" x2="${pl+cW}" y2="${yg}" stroke="rgba(74,127,192,.06)" stroke-width="1"/>`;
+    s+=`<text x="${pl-3}" y="${+yg+3}" text-anchor="end" font-family="'Courier New'" font-size="7" fill="rgba(74,127,192,.4)">${(f*maxDh).toFixed(1)}</text>`;
+  });
+  [1,5,10,15,20].forEach(vi=>{
+    s+=`<text x="${x(vi).toFixed(0)}" y="${pt+cH+11}" text-anchor="middle" font-family="'Courier New'" font-size="7" fill="rgba(74,127,192,.4)">${vi}</text>`;
+  });
+  // Límites
+  if(ly1>pt&&ly1<pt+cH) s+=`<line x1="${pl}" y1="${ly1.toFixed(0)}" x2="${pl+cW}" y2="${ly1.toFixed(0)}" stroke="rgba(160,72,72,.45)" stroke-width="1" stroke-dasharray="4 3"/>`;
+  if(ly05>pt&&ly05<pt+cH) s+=`<line x1="${pl}" y1="${ly05.toFixed(0)}" x2="${pl+cW}" y2="${ly05.toFixed(0)}" stroke="rgba(172,130,40,.35)" stroke-width="1" stroke-dasharray="3 4"/>`;
+  // Curva
+  s+=`<path d="${path}" stroke="var(--b2)" stroke-width="2" fill="none" stroke-linecap="round"/>`;
+  // Punto actual
+  s+=`<line x1="${cx}" y1="${pt}" x2="${cx}" y2="${pt+cH}" stroke="rgba(172,130,40,.3)" stroke-width="1" stroke-dasharray="3 3"/>`;
+  s+=`<circle cx="${cx}" cy="${cy}" r="3.5" fill="var(--warn)"/>`;
+  // Ejes
+  s+=`<text x="${pl+cW/2}" y="${H-3}" text-anchor="middle" font-family="'Century Gothic',sans-serif" font-size="7.5" fill="rgba(74,127,192,.35)">v (m/h)</text>`;
+  s+=`<text x="9" y="${pt+cH/2}" text-anchor="middle" font-family="'Century Gothic',sans-serif" font-size="7.5" fill="rgba(74,127,192,.35)" transform="rotate(-90,9,${pt+cH/2})">Δh (m)</text>`;
+  svg.innerHTML=s;
+}
+
+// ── INIT ──
+renderLayers();
+calc();
+</script>
+</body>
+</html>
